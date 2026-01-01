@@ -9,22 +9,47 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: testpypi-publish
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build distributions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
-      - run: |
+
+      - name: Install build tools
+        run: |
           python -m pip install --upgrade pip
           python -m pip install build twine
-      - run: python -m build
-      - run: python -m twine check dist/*
-      - uses: actions/upload-artifact@v4
+
+      - name: Ensure tag matches pyproject version
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"     # e.g. v0.1.4rc1
+          TAG_VER="${TAG#v}"           # 0.1.4rc1
+          PY_VER="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          echo "Tag version:       $TAG_VER"
+          echo "pyproject version: $PY_VER"
+          test "$TAG_VER" = "$PY_VER"
+
+      - name: Build
+        run: python -m build
+
+      - name: Verify dist metadata
+        run: python -m twine check dist/*
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
@@ -37,14 +62,17 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/rp2040link/
     permissions:
-      id-token: write
+      id-token: write   # REQUIRED for PyPI Trusted Publishing (OIDC)
       contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
+
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
