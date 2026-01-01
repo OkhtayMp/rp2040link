@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.4 - 2026-01-01
+- Release bump.
+
 ## 0.1.3 - 2026-01-01
 - Hardened Trusted Publishing workflows for okhtaymp/rp2040link (least-privilege OIDC, twine check, pip cache, workflow_dispatch).
 - Added optional TestPyPI workflow for rc tags (v*rc*).

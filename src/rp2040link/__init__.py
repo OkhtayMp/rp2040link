@@ -4,4 +4,4 @@ from .pico import Pico, Polarity
 from .exceptions import Rp2040LinkError, Timeout
 
 __all__ = ["Pico", "Polarity", "Rp2040LinkError", "Timeout"]
-__version__ = "0.1.3"
+__version__ = "0.1.4"
